@@ -106,7 +106,8 @@ function applyFilters(){
 }
 
 fetch('cars.json').then(r=>r.json()).then(data=>{
-  cars = data;
+  // support both formats: { cars: [...] } or [...]
+  cars = data.cars || data;
   applyFilters();
   // if URL contains hash to open a specific car
   if(location.hash && location.hash.startsWith('#car-')){

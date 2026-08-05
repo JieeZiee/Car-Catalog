@@ -1,19 +1,21 @@
-[
-  {
-    "id": "4",
-    "title": "BMW F30 320i 2013",
-    "price": 290000000,
-    "year": 2013,
-    "mileage": 30000,
-    "location": "Sidoarjo, Juanda",
-    "description": "Matic triptonic\nKm 30rb an\nOpen 290jt nego",
-    "images": [
-      "images/bmw-f30-1.jpg",
-      "images/bmw-f30-2.jpg",
-      "images/bmw-f30-3.jpg",
-      "images/bmw-f30-4.jpg"
-    ],
-    "whatsapp": "6281234567890",
-    "status": "available"
-  }
-]
+{
+  "cars": [
+    {
+      "id": "4",
+      "title": "BMW F30 320i 2013",
+      "price": 290000000,
+      "year": 2013,
+      "mileage": 30000,
+      "location": "Sidoarjo, Juanda",
+      "description": "Matic triptonic\nKm 30rb an\nOpen 290jt nego",
+      "images": [
+        "images/bmw-f30-1.jpg",
+        "images/bmw-f30-2.jpg",
+        "images/bmw-f30-3.jpg",
+        "images/bmw-f30-4.jpg"
+      ],
+      "whatsapp": "6281234567890",
+      "status": "available"
+    }
+  ]
+}
