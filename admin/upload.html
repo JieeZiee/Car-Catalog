@@ -49,7 +49,7 @@
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js" onerror="console.warn('Netlify Identity widget failed to load')"></script>
   <script>
     // Cloudinary configuration (set to values you requested)
-    window.CLOUDINARY_CLOUD_NAME = 'wi5×7kjb';
+    window.CLOUDINARY_CLOUD_NAME = 'wi5x7kjb';
     window.CLOUDINARY_UPLOAD_PRESET = 'car-catalog_unsigned';
 
     // Robust Netlify Identity initialization: poll for availability and attach handlers
@@ -169,6 +169,16 @@
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jwt },
           body: JSON.stringify(data)
         });
+
+        // Debug: handle non-JSON and show raw server response (helps diagnose HTML error pages)
+        const contentType = res.headers.get('content-type') || '';
+        if(!contentType.includes('application/json')){
+          const text = await res.text();
+          console.error('Non-JSON response from add-car:', res.status, text);
+          errEl.textContent = 'Server response: ' + (text ? text.substring(0,800) : ('Status ' + res.status));
+          return;
+        }
+
         const j = await res.json();
         if(!res.ok) throw new Error(j.error || JSON.stringify(j));
         msg.textContent = 'Listing submitted — commit: ' + (j.commit && j.commit.sha ? j.commit.sha : 'ok');
