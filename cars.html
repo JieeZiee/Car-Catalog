@@ -14,6 +14,7 @@
     .price{font-weight:700;margin-top:6px}
     .empty{color:#666}
     a.logo{display:block;margin-bottom:12px;font-size:18px;text-decoration:none;color:#111}
+    a.card-link{color:inherit;text-decoration:none}
   </style>
 </head>
 <body>
@@ -28,6 +29,10 @@
     const msg = document.getElementById('msg');
     const errEl = document.getElementById('err');
 
+    function formatPrice(n){
+      try{ return new Intl.NumberFormat('id-ID').format(Number(n)); }catch(e){ return n; }
+    }
+
     async function loadPublic(){
       listEl.innerHTML = 'Loading...'; errEl.textContent=''; msg.textContent='';
       try{
@@ -39,13 +44,18 @@
         listEl.innerHTML = '';
         cars.forEach(car => {
           const div = document.createElement('div'); div.className='card';
+          const link = document.createElement('a'); link.className='card-link';
+          link.href = '/cars/detail.html?id=' + encodeURIComponent(car.id);
           const img = document.createElement('img'); img.className='thumb'; img.src = (car.images && car.images[0]) ? car.images[0] : '/placeholder.png';
           const meta = document.createElement('div'); meta.className='meta';
           let titleLine = `<div><strong>${car.title}</strong>`;
-          if(car.status === 'sold') titleLine += `<span class="sold-badge">SOLD</span>`;
+          if(car.status === 'sold') titleLine += `<span class=\"sold-badge\">SOLD</span>`;
           titleLine += `</div>`;
-          meta.innerHTML = titleLine + `<div class="price">${car.price ? 'Rp ' + car.price.toLocaleString('id-ID') : '-'}</div><div>Year: ${car.year || '-'} • Mileage: ${car.mileage || '-'}</div>`;
-          div.appendChild(img); div.appendChild(meta);
+          const priceText = car.price ? 'Rp ' + formatPrice(car.price) : '-';
+          meta.innerHTML = titleLine + `<div class=\"price\">${priceText}</div><div>Year: ${car.year || '-'} • Mileage: ${car.mileage || '-'}</div>`;
+          link.appendChild(img);
+          link.appendChild(meta);
+          div.appendChild(link);
           listEl.appendChild(div);
         });
       }catch(err){ listEl.innerHTML=''; errEl.textContent = String(err); }

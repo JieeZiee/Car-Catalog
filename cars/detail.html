@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Car detail</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Arial;padding:16px;max-width:900px;margin:auto}
+    .gallery{display:flex;gap:8px}
+    .gallery img{width:100%;max-height:420px;object-fit:cover;border-radius:6px}
+    .thumbs{display:flex;gap:8px;margin-top:8px}
+    .thumbs img{width:100px;height:70px;object-fit:cover;border-radius:4px;cursor:pointer}
+    .meta{margin-top:12px}
+    .sold-badge{display:inline-block;background:#d9534f;color:white;padding:4px 8px;border-radius:4px;font-weight:700;margin-left:8px}
+    .price{font-weight:700;margin-top:6px;font-size:18px}
+    .back{display:inline-block;margin-bottom:12px}
+    .actions{margin-top:12px}
+    .whatsapp{background:#25D366;color:white;padding:8px 12px;border-radius:6px;text-decoration:none}
+  </style>
+</head>
+<body>
+  <a class="back" href="/cars.html">← Back to listings</a>
+  <div id="content">Loading...</div>
+  <div id="err" style="color:red;margin-top:12px"></div>
+
+  <script>
+    function q(name){ const p = new URLSearchParams(location.search); return p.get(name); }
+    function formatPrice(n){ try{ return new Intl.NumberFormat('id-ID').format(Number(n)); }catch(e){ return n; } }
+
+    async function loadDetail(){
+      const id = q('id'); if(!id){ document.getElementById('content').innerHTML = '<div>Missing id</div>'; return; }
+      try{
+        const res = await fetch('/.netlify/functions/get-cars-public');
+        if(!res.ok){ const t = await res.text(); throw new Error(t || 'Failed to load'); }
+        const data = await res.json();
+        const cars = data.cars || [];
+        const car = cars.find(c=>String(c.id) === String(id));
+        if(!car) { document.getElementById('content').innerHTML = '<div>Listing not found</div>'; return; }
+
+        const imgs = car.images && car.images.length ? car.images : ['/placeholder.png'];
+        let html = '';
+        html += `<h1>${car.title || ''}`;
+        if(car.status === 'sold') html += '<span class="sold-badge">SOLD</span>';
+        html += `</h1>`;
+        html += `<div class="gallery"><img id="main-img" src="${imgs[0]}" alt="${car.title||''}"></div>`;
+        if(imgs.length>1){ html += '<div class="thumbs">'; imgs.forEach((u,idx)=>{ html += `<img src="${u}" data-idx="${idx}" alt="thumb">`; }); html += '</div>'; }
+        html += `<div class="meta"><div class="price">${car.price ? 'Rp ' + formatPrice(car.price) : '-'}</div><div>Year: ${car.year || '-'} • Mileage: ${car.mileage || '-'}</div><p>${car.description || ''}</p>`;
+        if(car.whatsapp) html += `<div class="actions"><a class="whatsapp" href="https://wa.me/${car.whatsapp}?text=${encodeURIComponent('Saya tertarik dengan listing: '+(car.title||'')+' - '+location.href)}" target="_blank">Chat via WhatsApp</a></div>`;
+        html += `<div style="margin-top:12px;color:#666">Posted by: ${car.created_by && car.created_by.email ? car.created_by.email : '-'}</div></div>`;
+
+        document.getElementById('content').innerHTML = html;
+
+        // thumbs click
+        document.querySelectorAll('.thumbs img').forEach(img=>{
+          img.addEventListener('click', (e)=>{ const main = document.getElementById('main-img'); main.src = e.target.src; });
+        });
+
+      }catch(err){ document.getElementById('content').innerHTML=''; document.getElementById('err').textContent = String(err); }
+    }
+
+    loadDetail();
+  </script>
+</body>
+</html>
