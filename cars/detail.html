@@ -46,7 +46,7 @@
         if(imgs.length>1){ html += '<div class="thumbs">'; imgs.forEach((u,idx)=>{ html += `<img src="${u}" data-idx="${idx}" alt="thumb">`; }); html += '</div>'; }
         html += `<div class="meta"><div class="price">${car.price ? 'Rp ' + formatPrice(car.price) : '-'}</div><div>Year: ${car.year || '-'} • Mileage: ${car.mileage || '-'}</div><p>${car.description || ''}</p>`;
         if(car.whatsapp) html += `<div class="actions"><a class="whatsapp" href="https://wa.me/${car.whatsapp}?text=${encodeURIComponent('Saya tertarik dengan listing: '+(car.title||'')+' - '+location.href)}" target="_blank">Chat via WhatsApp</a></div>`;
-        html += `<div style="margin-top:12px;color:#666">Posted by: ${car.created_by && car.created_by.email ? car.created_by.email : '-'}</div></div>`;
+        html += `</div>`;
 
         document.getElementById('content').innerHTML = html;
 
