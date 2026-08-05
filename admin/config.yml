@@ -8,31 +8,52 @@ public_folder: "/images"
 collections:
   - name: "cars_file"
     label: "Cars"
-    file: "cars.json"
-    editor:
-      preview: false
-    fields:
-      - label: "cars"
-        name: "cars"
-        widget: "list"
-        summary: "{{title}} ({{year}})"
+    files:
+      - file: "cars.json"
+        label: "Cars JSON"
+        name: "cars_json"
+        editor:
+          preview: false
         fields:
-          - { label: "ID", name: "id", widget: "string" }
-          - { label: "Title", name: "title", widget: "string" }
-          - { label: "Price", name: "price", widget: "number" }
-          - { label: "Year", name: "year", widget: "number" }
-          - { label: "Mileage", name: "mileage", widget: "number" }
-          - { label: "Location", name: "location", widget: "string" }
-          - { label: "Description", name: "description", widget: "text" }
-          - label: "Images"
-            name: "images"
+          - label: "cars"
+            name: "cars"
             widget: "list"
+            summary: "{{title}} ({{year}})"
             fields:
-              - { label: "Image", name: "image", widget: "image" }
-          - { label: "WhatsApp", name: "whatsapp", widget: "string" }
-          - label: "Status"
-            name: "status"
-            widget: "select"
-            options:
-              - "available"
-              - "sold"
+              - label: "ID"
+                name: "id"
+                widget: "string"
+              - label: "Title"
+                name: "title"
+                widget: "string"
+              - label: "Price"
+                name: "price"
+                widget: "number"
+              - label: "Year"
+                name: "year"
+                widget: "number"
+              - label: "Mileage"
+                name: "mileage"
+                widget: "number"
+              - label: "Location"
+                name: "location"
+                widget: "string"
+              - label: "Description"
+                name: "description"
+                widget: "text"
+              - label: "Images"
+                name: "images"
+                widget: "list"
+                fields:
+                  - label: "Image"
+                    name: "image"
+                    widget: "image"
+              - label: "WhatsApp"
+                name: "whatsapp"
+                widget: "string"
+              - label: "Status"
+                name: "status"
+                widget: "select"
+                options:
+                  - "available"
+                  - "sold"

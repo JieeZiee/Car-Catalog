@@ -25,6 +25,15 @@ let currentImages = [];
 let currentImgIndex = 0;
 let currentDetailUrl = '';
 
+function normalizeImageEntry(entry){
+  if(!entry) return null;
+  if(typeof entry === 'string') return entry;
+  if(typeof entry === 'object'){
+    return entry.image || entry.path || entry.url || null;
+  }
+  return null;
+}
+
 function formatPrice(n){
   if(!n) return '-';
   return 'Rp' + Number(n).toLocaleString('id-ID');
@@ -33,7 +42,8 @@ function formatPrice(n){
 function renderCard(car){
   const div = document.createElement('article');
   div.className = 'card';
-  const imgSrc = (car.images && car.images.length) ? car.images[0] : 'https://via.placeholder.com/600x400?text=No+Image';
+  const firstImg = (car.images && car.images.length) ? normalizeImageEntry(car.images[0]) : null;
+  const imgSrc = firstImg || 'https://via.placeholder.com/600x400?text=No+Image';
   div.innerHTML = `
     <img loading="lazy" src="${imgSrc}" alt="${car.title}" />
     <div class="card-body">
@@ -52,7 +62,8 @@ function renderCard(car){
 }
 
 function openDetail(car){
-  currentImages = car.images && car.images.length ? car.images : ['https://via.placeholder.com/1000x600?text=No+Image'];
+  currentImages = (car.images || []).map(i => normalizeImageEntry(i)).filter(Boolean);
+  if(currentImages.length === 0) currentImages = ['https://via.placeholder.com/1000x600?text=No+Image'];
   currentImgIndex = 0;
   modalImage.src = currentImages[0];
   modalTitle.textContent = car.title;
