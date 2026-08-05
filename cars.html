@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Car Catalog — Listings</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Arial;padding:16px;max-width:1000px;margin:auto}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+    .card{border:1px solid #eee;padding:10px;border-radius:6px;background:#fff}
+    .thumb{width:100%;height:160px;object-fit:cover;border-radius:4px}
+    .meta{margin-top:8px}
+    .sold-badge{display:inline-block;background:#d9534f;color:white;padding:4px 8px;border-radius:4px;font-weight:700;margin-left:8px}
+    .price{font-weight:700;margin-top:6px}
+    .empty{color:#666}
+    a.logo{display:block;margin-bottom:12px;font-size:18px;text-decoration:none;color:#111}
+  </style>
+</head>
+<body>
+  <a class="logo" href="/">Car Catalog</a>
+  <h1>Available Cars</h1>
+  <div id="list" class="grid"></div>
+  <div id="msg" style="color:green;margin-top:12px"></div>
+  <div id="err" style="color:red;margin-top:12px"></div>
+
+  <script>
+    const listEl = document.getElementById('list');
+    const msg = document.getElementById('msg');
+    const errEl = document.getElementById('err');
+
+    async function loadPublic(){
+      listEl.innerHTML = 'Loading...'; errEl.textContent=''; msg.textContent='';
+      try{
+        const res = await fetch('/.netlify/functions/get-cars-public');
+        if(!res.ok){ const t = await res.text(); throw new Error(t || 'Failed to load'); }
+        const data = await res.json();
+        const cars = data.cars || [];
+        if(cars.length === 0){ listEl.innerHTML = '<div class="empty">No listings available.</div>'; return; }
+        listEl.innerHTML = '';
+        cars.forEach(car => {
+          const div = document.createElement('div'); div.className='card';
+          const img = document.createElement('img'); img.className='thumb'; img.src = (car.images && car.images[0]) ? car.images[0] : '/placeholder.png';
+          const meta = document.createElement('div'); meta.className='meta';
+          let titleLine = `<div><strong>${car.title}</strong>`;
+          if(car.status === 'sold') titleLine += `<span class="sold-badge">SOLD</span>`;
+          titleLine += `</div>`;
+          meta.innerHTML = titleLine + `<div class="price">${car.price ? 'Rp ' + car.price.toLocaleString('id-ID') : '-'}</div><div>Year: ${car.year || '-'} • Mileage: ${car.mileage || '-'}</div>`;
+          div.appendChild(img); div.appendChild(meta);
+          listEl.appendChild(div);
+        });
+      }catch(err){ listEl.innerHTML=''; errEl.textContent = String(err); }
+    }
+
+    loadPublic();
+  </script>
+</body>
+</html>
