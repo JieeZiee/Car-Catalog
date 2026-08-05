@@ -1,5 +1,3 @@
-const fetch = require('node-fetch');
-
 // Netlify Function: add-car
 // Expects POST with JSON body { title, price, year, mileage, location, description, whatsapp, status, images: [url, ...] }
 // Authorization: Bearer <netlify-id-token> header must be present (JWT from netlify-identity)
@@ -25,13 +23,26 @@ function respond(status, body){
 exports.handler = async function(event, context) {
   if(event.httpMethod !== 'POST') return respond(405, { error: 'Method Not Allowed' });
 
+  // pick a fetch implementation at runtime (prefer global fetch on Node 18+)
+  let fetchFn = null;
+  if(typeof fetch !== 'undefined') fetchFn = fetch;
+  else {
+    try{
+      // require at runtime only (avoid ImportModuleError at module load)
+      fetchFn = require('node-fetch');
+    }catch(e){
+      console.error('Runtime has no global fetch and node-fetch is not installed');
+    }
+  }
+  if(!fetchFn) return respond(500, { error: 'Runtime missing fetch. Please use Node 18+ runtime or install node-fetch in functions package.json' });
+
   const auth = (event.headers && (event.headers.authorization || event.headers.Authorization)) || '';
   if(!auth || !auth.startsWith('Bearer ')) return respond(401, { error: 'Missing Authorization header (Bearer token expected)' });
   const idToken = auth.replace(/^Bearer\s+/, '');
 
   // Verify identity token by calling Netlify Identity endpoint
   try{
-    const userRes = await fetch(`${SITE_URL}/.netlify/identity/user`, {
+    const userRes = await fetchFn(`${SITE_URL}/.netlify/identity/user`, {
       headers: { 'Authorization': `Bearer ${idToken}` }
     });
     if(userRes.status !== 200){
@@ -45,11 +56,6 @@ exports.handler = async function(event, context) {
     return respond(500, { error: 'Error verifying identity', details: String(err) });
   }
 
-  // At this point the user is authenticated. You can add role/email checks here if desired.
-  // Example: allow only users with app_metadata.roles containing 'editor' or 'admin'
-  // const roles = (user && user.app_metadata && user.app_metadata.roles) || [];
-  // if(!roles.includes('editor') && !roles.includes('admin')) return respond(403, { error: 'Forbidden: insufficient role' });
-
   let payload;
   try{ payload = JSON.parse(event.body); }catch(e){ return respond(400, { error: 'Invalid JSON body' }); }
 
@@ -61,7 +67,7 @@ exports.handler = async function(event, context) {
   const getUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${filePath}?ref=${BRANCH}`;
   let currentContent, sha;
   try{
-    const getRes = await fetch(getUrl, { headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'User-Agent': 'Netlify-Function' } });
+    const getRes = await fetchFn(getUrl, { headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'User-Agent': 'Netlify-Function' } });
     if(getRes.status === 404){
       // create new structure
       currentContent = { cars: [] };
@@ -117,7 +123,7 @@ exports.handler = async function(event, context) {
   if(sha) body.sha = sha;
 
   try{
-    const putRes = await fetch(putUrl, {
+    const putRes = await fetchFn(putUrl, {
       method: 'PUT',
       headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'User-Agent': 'Netlify-Function', 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
