@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Katalog Mobil Bekas - Showroom</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <h1 id="site-title">Showroom Mobil Bekas</h1>
+    <p id="site-sub">Daftar unit ready display. Klik untuk detail & hubungi via WhatsApp.</p>
+    <div class="controls">
+      <input id="search" type="search" placeholder="Cari merk, model, tahun, lokasi..." />
+      <select id="filter-status">
+        <option value="">Semua</option>
+        <option value="available">Tersedia</option>
+        <option value="sold">Terjual</option>
+      </select>
+    </div>
+  </header>
+
+  <main>
+    <section id="catalog" class="grid"></section>
+    <p id="empty" class="empty" hidden>Tidak ada unit.</p>
+  </main>
+
+  <!-- Modal detail -->
+  <dialog id="detailModal" class="modal">
+    <button class="modal-close" id="closeModal">×</button>
+    <div class="modal-body">
+      <div class="carousel">
+        <button id="prevImg" class="nav">‹</button>
+        <img id="modalImage" src="" alt="Gambar mobil" />
+        <button id="nextImg" class="nav">›</button>
+      </div>
+      <div class="info">
+        <h2 id="modalTitle"></h2>
+        <p class="price" id="modalPrice"></p>
+        <ul class="meta">
+          <li><strong>Tahun:</strong> <span id="modalYear"></span></li>
+          <li><strong>KM:</strong> <span id="modalMileage"></span></li>
+          <li><strong>Lokasi:</strong> <span id="modalLocation"></span></li>
+          <li><strong>Status:</strong> <span id="modalStatus"></span></li>
+        </ul>
+        <p id="modalDesc"></p>
+        <div class="actions">
+          <a id="whatsappBtn" class="btn" target="_blank" rel="noopener">Hubungi via WhatsApp</a>
+          <a id="shareBtn" class="btn secondary" target="_blank" rel="noopener">Salin link detail</a>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <footer class="site-footer">
+    <p>Powered by Showroom — dibuat cepat via HP</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

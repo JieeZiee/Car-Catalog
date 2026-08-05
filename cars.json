@@ -1,0 +1,44 @@
+[
+  {
+    "id": "1",
+    "title": "Toyota Avanza 2016",
+    "price": 95000000,
+    "year": 2016,
+    "mileage": 120000,
+    "location": "Jakarta",
+    "description": "AC dingin, servis rutin, surat lengkap. Warna putih metalik. Kondisi bagus, tangan ke-2.",
+    "images": [
+      "https://images.unsplash.com/photo-1542362567-b07e54358753?w=1200&auto=format&fit=crop&q=60",
+      "https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?w=1200&auto=format&fit=crop&q=60",
+      "https://images.unsplash.com/photo-1517949908114-4d4a0d3c6f6b?w=1200&auto=format&fit=crop&q=60"
+    ],
+    "whatsapp": "6281234567890",
+    "status": "available"
+  },
+  {
+    "id": "2",
+    "title": "Honda Jazz RS 2014",
+    "price": 125000000,
+    "year": 2014,
+    "mileage": 98000,
+    "location": "Bekasi",
+    "description": "Interior bersih, mesin sehat. Surat lengkap. Siap pakai.",
+    "images": [
+      "https://images.unsplash.com/photo-1542362567-b07e54358753?w=1200&auto=format&fit=crop&q=60"
+    ],
+    "whatsapp": "6281234567890",
+    "status": "available"
+  },
+  {
+    "id": "3",
+    "title": "Daihatsu Xenia 2012",
+    "price": 72000000,
+    "year": 2012,
+    "mileage": 150000,
+    "location": "Depok",
+    "description": "Kendaraan bekas, harga terjangkau. Cat ada baret kecil. Dokumen lengkap.",
+    "images": [],
+    "whatsapp": "6281234567890",
+    "status": "sold"
+  }
+]
