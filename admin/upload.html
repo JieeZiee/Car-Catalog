@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin Upload — Car Catalog</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Arial;padding:20px;max-width:800px;margin:auto}
+    label{display:block;margin-top:10px}
+    input,textarea,select{width:100%;padding:8px;margin-top:6px}
+    .small{width:200px}
+    .actions{margin-top:12px}
+    .thumb{max-width:160px;display:inline-block;margin-right:8px}
+  </style>
+</head>
+<body>
+  <h1>Admin — Tambah Listing Mobil</h1>
+  <div id="auth">
+    <button id="btn-login">Log in / Sign up</button>
+    <span id="user-email" style="margin-left:12px"></span>
+    <button id="btn-logout" style="display:none;margin-left:12px">Logout</button>
+  </div>
+
+  <form id="form" style="margin-top:16px">
+    <label>Title<input name="title" required /></label>
+    <label>Price<input name="price" type="number" /></label>
+    <label>Year<input name="year" type="number" /></label>
+    <label>Mileage<input name="mileage" type="number" /></label>
+    <label>Location<input name="location" /></label>
+    <label>Description<textarea name="description"></textarea></label>
+    <label>WhatsApp<input name="whatsapp" /></label>
+    <label>Status<select name="status"><option value="available">available</option><option value="sold">sold</option></select></label>
+
+    <label>Images (select multiple)
+      <input id="images" type="file" accept="image/*" multiple />
+    </label>
+
+    <div id="preview"></div>
+
+    <div class="actions">
+      <button type="submit">Submit</button>
+    </div>
+  </form>
+
+  <div id="msg" style="margin-top:12px;color:green"></div>
+  <div id="err" style="margin-top:12px;color:red"></div>
+
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <script>
+    const siteUrl = window.location.origin;
+    const cloudName = '<CLOUDINARY_CLOUD_NAME>'; // replace in Netlify env usage - not used client-side in this template
+    const uploadPreset = '<UPLOAD_PRESET>';     // replace in Netlify env usage - not used client-side in this template
+
+    // Use netlify-identity-widget for login
+    if(window.netlifyIdentity){
+      window.netlifyIdentity.on('init', user => updateUI(user));
+      window.netlifyIdentity.on('login', user => { updateUI(user); window.netlifyIdentity.close(); });
+      window.netlifyIdentity.on('logout', () => updateUI(null));
+      window.netlifyIdentity.init();
+    }
+
+    const btnLogin = document.getElementById('btn-login');
+    const btnLogout = document.getElementById('btn-logout');
+    const userEmail = document.getElementById('user-email');
+    btnLogin.addEventListener('click', ()=> window.netlifyIdentity.open());
+    btnLogout.addEventListener('click', ()=> window.netlifyIdentity.logout());
+
+    function updateUI(user){
+      if(user){
+        btnLogin.style.display = 'none';
+        btnLogout.style.display = 'inline-block';
+        userEmail.textContent = user.email;
+      } else {
+        btnLogin.style.display = 'inline-block';
+        btnLogout.style.display = 'none';
+        userEmail.textContent = '';
+      }
+    }
+
+    const form = document.getElementById('form');
+    const imagesInput = document.getElementById('images');
+    const preview = document.getElementById('preview');
+    const msg = document.getElementById('msg');
+    const errEl = document.getElementById('err');
+
+    let selectedFiles = [];
+    imagesInput.addEventListener('change', (e)=>{
+      selectedFiles = Array.from(e.target.files);
+      preview.innerHTML = '';
+      selectedFiles.forEach(f=>{
+        const img = document.createElement('img'); img.className='thumb'; img.src = URL.createObjectURL(f); preview.appendChild(img);
+      });
+    });
+
+    async function uploadToCloudinary(file){
+      // Client-side unsigned upload
+      const cloudName = window.CLOUDINARY_CLOUD_NAME || ''; // we will inject env var via Netlify (see README)
+      const preset = window.CLOUDINARY_UPLOAD_PRESET || '';
+      if(!cloudName || !preset) throw new Error('Cloudinary credentials not set. Set CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET in Netlify env.');
+      const url = `https://api.cloudinary.com/v1_1/${cloudName}/upload`;
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('upload_preset', preset);
+      const r = await fetch(url, { method: 'POST', body: fd });
+      if(!r.ok) throw new Error('Cloudinary upload failed');
+      return await r.json();
+    }
+
+    form.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      msg.textContent=''; errEl.textContent='';
+      // require login
+      const user = window.netlifyIdentity && window.netlifyIdentity.currentUser();
+      if(!user){ errEl.textContent='Please log in first.'; return; }
+      try{
+        // get JWT
+        const jwt = await user.jwt();
+        // upload images to Cloudinary
+        const uploadedUrls = [];
+        for(const file of selectedFiles){
+          msg.textContent = 'Uploading ' + file.name + ' ...';
+          const r = await uploadToCloudinary(file);
+          uploadedUrls.push(r.secure_url || r.url);
+        }
+        msg.textContent = 'Submitting metadata...';
+        // collect fields
+        const data = {};
+        new FormData(form).forEach((v,k)=>{ data[k]=v; });
+        data.images = uploadedUrls;
+
+        const res = await fetch('/.netlify/functions/add-car', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + jwt },
+          body: JSON.stringify(data)
+        });
+        const j = await res.json();
+        if(!res.ok) throw new Error(j.error || JSON.stringify(j));
+        msg.textContent = 'Listing submitted — commit: ' + (j.commit && j.commit.sha ? j.commit.sha : 'ok');
+        form.reset(); preview.innerHTML=''; selectedFiles=[];
+      }catch(err){
+        console.error(err); errEl.textContent = String(err);
+      }
+    });
+
+    // Inject Cloudinary config from Netlify env via global variables at build time (Netlify will replace these if configured)
+    // If you're hosting static file from repo, set these in Netlify UI under Site settings -> Build & deploy -> Environment
+    window.CLOUDINARY_CLOUD_NAME = 'REPLACE_ME_CLOUD_NAME';
+    window.CLOUDINARY_UPLOAD_PRESET = 'REPLACE_ME_PRESET';
+  </script>
+</body>
+</html>
