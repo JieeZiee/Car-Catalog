@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin — Listings</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Arial;padding:20px;max-width:1000px;margin:auto}
+    .card{border:1px solid #ddd;padding:12px;margin:10px 0;display:flex;gap:12px}
+    .thumb{width:120px;height:80px;object-fit:cover}
+    .meta{flex:1}
+    button{margin-right:8px}
+    .actions{margin-top:8px}
+    .hide{display:none}
+    label{display:block;margin-top:8px}
+    input,textarea,select{width:100%;padding:6px}
+    .row{display:flex;gap:8px}
+    .sold-badge{display:inline-block;background:#d9534f;color:white;padding:2px 6px;border-radius:4px;font-weight:700;margin-left:8px}
+  </style>
+</head>
+<body>
+  <h1>Admin — Listings</h1>
+  <div id="auth">
+    <button id="btn-login">Log in / Sign up</button>
+    <span id="user-email" style="margin-left:12px"></span>
+    <button id="btn-logout" style="display:none;margin-left:12px">Logout</button>
+  </div>
+
+  <div style="margin-top:12px">
+    <a href="/admin/upload.html">Tambah listing</a>
+    <button id="btn-refresh">Refresh</button>
+  </div>
+
+  <div id="list" style="margin-top:12px"></div>
+
+  <div id="msg" style="color:green;margin-top:12px"></div>
+  <div id="err" style="color:red;margin-top:12px"></div>
+
+  <!-- Edit modal -->
+  <div id="modal" class="hide">
+    <h3>Edit Listing</h3>
+    <form id="edit-form">
+      <input type="hidden" name="id" />
+      <label>Title<input name="title" required /></label>
+      <label>Price<input name="price" type="number" /></label>
+      <label>Year<input name="year" type="number" /></label>
+      <label>Mileage<input name="mileage" type="number" /></label>
+      <label>Location<input name="location" /></label>
+      <label>Description<textarea name="description"></textarea></label>
+      <label>WhatsApp<input name="whatsapp" /></label>
+      <label>Status<select name="status"><option value="available">available</option><option value="sold">sold</option></select></label>
+      <div class="actions">
+        <button type="submit">Save</button>
+        <button type="button" id="btn-cancel">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <script>
+    function waitForIdentity(maxAttempts = 50, interval = 100) {
+      return new Promise((resolve, reject) => {
+        let attempts = 0;
+        (function poll(){
+          if(window.netlifyIdentity && typeof window.netlifyIdentity.open === 'function') return resolve(window.netlifyIdentity);
+          attempts++;
+          if(attempts >= maxAttempts) return reject(new Error('Netlify Identity widget not available'));
+          setTimeout(poll, interval);
+        })();
+      });
+    }
+
+    function updateUI(user){
+      const btnLogin = document.getElementById('btn-login');
+      const btnLogout = document.getElementById('btn-logout');
+      const userEmail = document.getElementById('user-email');
+      if(user){ btnLogin.style.display='none'; btnLogout.style.display='inline-block'; userEmail.textContent = user.email; }
+      else { btnLogin.style.display='inline-block'; btnLogout.style.display='none'; userEmail.textContent = ''; }
+    }
+
+    (function attachAuthButtons(){
+      const btnLogin = document.getElementById('btn-login');
+      const btnLogout = document.getElementById('btn-logout');
+      btnLogin.addEventListener('click', ()=>{ if(window.netlifyIdentity && window.netlifyIdentity.open) return window.netlifyIdentity.open('login'); waitForIdentity().then(id=>id.open('login')).catch(()=>alert('Login unavailable')); });
+      btnLogout.addEventListener('click', ()=>{ if(window.netlifyIdentity && window.netlifyIdentity.logout) return window.netlifyIdentity.logout(); waitForIdentity().then(id=>id.logout()).catch(()=>{}); });
+    })();
+
+    waitForIdentity().then(id=>{
+      try{ id.init(); }catch(e){}
+      id.on('init', user=>updateUI(user));
+      id.on('login', user=>{ updateUI(user); id.close(); loadList(); });
+      id.on('logout', ()=>{ updateUI(null); document.getElementById('list').innerHTML=''; });
+      if(id.currentUser) try{ updateUI(id.currentUser()); }catch(e){}
+    }).catch(()=>{});
+
+    const listEl = document.getElementById('list');
+    const msg = document.getElementById('msg');
+    const errEl = document.getElementById('err');
+    const btnRefresh = document.getElementById('btn-refresh');
+
+    btnRefresh.addEventListener('click', loadList);
+
+    async function api(path, method='GET', body){
+      const user = (window.netlifyIdentity && window.netlifyIdentity.currentUser) ? window.netlifyIdentity.currentUser() : null;
+      if(!user) throw new Error('Please log in');
+      const jwt = await user.jwt();
+      const opts = { method, headers: { Authorization: 'Bearer ' + jwt } };
+      if(body){ opts.headers['Content-Type']='application/json'; opts.body = JSON.stringify(body); }
+      const res = await fetch(path, opts);
+      const ct = res.headers.get('content-type')||'';
+      if(ct.includes('application/json')){
+        const j = await res.json();
+        if(!res.ok) throw new Error(j.error || JSON.stringify(j));
+        return j;
+      } else {
+        const t = await res.text();
+        throw new Error(t || ('Status ' + res.status));
+      }
+    }
+
+    async function loadList(){
+      listEl.innerHTML = 'Loading...'; msg.textContent=''; errEl.textContent='';
+      try{
+        const data = await api('/.netlify/functions/get-cars','GET');
+        const cars = data.cars || [];
+        if(cars.length===0){ listEl.innerHTML = '<em>No listings</em>'; return; }
+        listEl.innerHTML = '';
+
+        // current identity user (may be null if not logged in)
+        const identityUser = (window.netlifyIdentity && window.netlifyIdentity.currentUser) ? window.netlifyIdentity.currentUser() : null;
+        const curId = identityUser ? identityUser.id : null;
+        const curRoles = (identityUser && identityUser.app_metadata && identityUser.app_metadata.roles) ? identityUser.app_metadata.roles : [];
+
+        cars.forEach(car=>{
+          const div = document.createElement('div'); div.className='card';
+          const img = document.createElement('img'); img.className='thumb'; img.src = (car.images && car.images[0]) ? car.images[0] : '/placeholder.png';
+          const meta = document.createElement('div'); meta.className='meta';
+          let titleLine = `<strong>${car.title}</strong>`;
+          if(car.status === 'sold') titleLine += '<span class="sold-badge">SOLD</span>';
+          meta.innerHTML = titleLine + `<div>Price: ${car.price || '-'} • Year: ${car.year || '-'} • Mileage: ${car.mileage || '-'}</div>`;
+          const actions = document.createElement('div'); actions.className='actions';
+
+          // Show edit/delete only to owner or privileged roles
+          const isOwner = curId && car.created_by && String(car.created_by.id) === String(curId);
+          const isPrivileged = curRoles && (curRoles.includes('admin') || curRoles.includes('editor'));
+          if(isOwner || isPrivileged){
+            const btnEdit = document.createElement('button'); btnEdit.textContent='Edit'; btnEdit.addEventListener('click', ()=>openEdit(car));
+            const btnDelete = document.createElement('button'); btnDelete.textContent='Delete'; btnDelete.addEventListener('click', ()=>doDelete(car.id));
+            actions.appendChild(btnEdit); actions.appendChild(btnDelete);
+          }
+
+          div.appendChild(img); div.appendChild(meta); div.appendChild(actions);
+          listEl.appendChild(div);
+        });
+      }catch(err){ listEl.innerHTML=''; errEl.textContent = String(err); }
+    }
+
+    // Edit flow
+    const modal = document.getElementById('modal');
+    const editForm = document.getElementById('edit-form');
+    document.getElementById('btn-cancel').addEventListener('click', closeModal);
+
+    function openEdit(car){
+      modal.classList.remove('hide');
+      editForm.id.value = car.id;
+      editForm.title.value = car.title || '';
+      editForm.price.value = car.price || '';
+      editForm.year.value = car.year || '';
+      editForm.mileage.value = car.mileage || '';
+      editForm.location.value = car.location || '';
+      editForm.description.value = car.description || '';
+      editForm.whatsapp.value = car.whatsapp || '';
+      editForm.status.value = car.status || 'available';
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+    function closeModal(){ modal.classList.add('hide'); }
+
+    editForm.addEventListener('submit', async (e)=>{
+      e.preventDefault(); msg.textContent=''; errEl.textContent='';
+      const formData = new FormData(editForm); const obj = {}; formData.forEach((v,k)=>obj[k]=v);
+      try{
+        const res = await api('/.netlify/functions/update-car','POST', obj);
+        msg.textContent = 'Updated — commit: ' + (res.commit && res.commit.sha ? res.commit.sha : 'ok');
+        closeModal(); loadList();
+      }catch(err){ errEl.textContent = String(err); }
+    });
+
+    async function doDelete(id){
+      if(!confirm('Delete this listing?')) return;
+      try{
+        const res = await api('/.netlify/functions/delete-car','POST',{ id });
+        msg.textContent = 'Deleted — commit: ' + (res.commit && res.commit.sha ? res.commit.sha : 'ok');
+        loadList();
+      }catch(err){ errEl.textContent = String(err); }
+    }
+
+    // auto-load if already logged in
+    waitForIdentity().then(id=>{ try{ if(id.currentUser) loadList(); }catch(e){} }).catch(()=>{});
+  </script>
+</body>
+</html>
