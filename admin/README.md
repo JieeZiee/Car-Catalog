@@ -1,0 +1,1 @@
+Enable Netlify Identity widget initialization to ensure invite tokens are handled and signup/login modal appears reliably.

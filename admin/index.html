@@ -8,5 +8,29 @@
   <body>
     <!-- Netlify CMS will automatically load config.yml from /admin/config.yml -->
     <script src="https://unpkg.com/netlify-cms@^2.0.0/dist/netlify-cms.js"></script>
+
+    <!-- Load Netlify Identity widget to reliably handle signup / invite flows -->
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    <script>
+      // Initialize Netlify Identity and force-open login modal when invite token present
+      // This helps when email clients or mobile browsers don't correctly open the invite flow.
+      (function(){
+        // Wait for netlifyIdentity to be available
+        function initIdentity(){
+          if(!window.netlifyIdentity) return setTimeout(initIdentity, 100);
+          // Initialize widget
+          window.netlifyIdentity.init();
+
+          // If there's an invite token in query or hash and no user, open the login/signup modal
+          const url = new URL(window.location.href);
+          const token = url.searchParams.get('invitation') || (window.location.hash.match(/invite_token=([^&]+)/) && RegExp.$1);
+          if(token && !window.netlifyIdentity.currentUser()){
+            // open the modal so user can accept invite / create password
+            try{ window.netlifyIdentity.open('login'); }catch(e){}
+          }
+        }
+        initIdentity();
+      })();
+    </script>
   </body>
 </html>
