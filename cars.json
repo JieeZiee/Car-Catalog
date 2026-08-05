@@ -16,6 +16,26 @@
       ],
       "whatsapp": "6281234567890",
       "status": "available"
+    },
+    {
+      "id": "1785956082267",
+      "title": "Brio S 2023",
+      "price": "135000000",
+      "year": "2023",
+      "mileage": "35000",
+      "location": "Sidoarjo ",
+      "description": "Manual",
+      "whatsapp": "628123456677",
+      "status": "available",
+      "images": [
+        "https://res.cloudinary.com/wi5x7kjb/image/upload/v1785956079/jrvfrxnbrldrrbwidk6g.jpg",
+        "https://res.cloudinary.com/wi5x7kjb/image/upload/v1785956079/bku20quwk9wpxof2njlf.jpg"
+      ],
+      "created_at": "2026-08-05T18:54:42.267Z",
+      "created_by": {
+        "id": "ae40146b-b5da-49ab-8faa-b804482a47c1",
+        "email": "warkopstk76@gmail.com"
+      }
     }
   ]
 }
